@@ -45,10 +45,10 @@ def fitness(individuo):
 def inicializa_populacao(tamanho_pop):
     populacao = []
     for _ in range(tamanho_pop):
-        individuo = {carga + '_' + compartimento: np.random.uniform(0, 5)
+        individuo = {carga + '_' + compartimento: round(np.random.uniform(0, 5), 3) 
                      for carga in cargas for compartimento in compartimentos}
         populacao.append(individuo)
-        # imprime_cromossomos(individuo)
+        # print (individuo)
     return populacao
 
 # Seleção por torneio
@@ -73,13 +73,14 @@ def crossover(pai1, pai2):
 def mutacao(individuo, taxa_mutacao=0.1):
     for gene in individuo:
         if random.random() < taxa_mutacao:
-            individuo[gene] = np.random.uniform(0, 5)
+            individuo[gene] = round(np.random.uniform(0, 5), 3)
     return individuo
 
 # Algoritmo Genético
 def algoritmo_genetico(tamanho_pop, geracoes, taxa_mutacao=0.1, taxa_crossover=0.8):
     # Inicializar população
     populacao = inicializa_populacao(tamanho_pop)
+    melhor_solução_historica = populacao[0]
     
     # Executar por um número de gerações
     for geracao in range(geracoes):
@@ -103,31 +104,50 @@ def algoritmo_genetico(tamanho_pop, geracoes, taxa_mutacao=0.1, taxa_crossover=0
             # Adicionar filhos na nova população
             nova_populacao.append(filho1)
             nova_populacao.append(filho2)
+            
         
         # Substituir a população anterior
         populacao = nova_populacao[:tamanho_pop]
-        
+
+
         # Melhor indivíduo da geração
         melhor_individuo = max(populacao, key=fitness)
         melhor_aptidao = fitness(melhor_individuo)
         
-        print(f'Geração {geracao + 1}: Melhor aptidão = {melhor_aptidao:.2f}')
+        # print(f'Geração {geracao + 1}: Melhor aptidão = {melhor_aptidao:.2f}')
+
+        if fitness(melhor_solução_historica) < fitness(melhor_individuo):
+            melhor_solução_historica = melhor_individuo
     
+
+    # Escrevendo no arquivo
+    with open('População.txt', 'w') as arquivo:
+        cont = 1
+        for cromossomo in populacao:
+            print(f"Fitness do cromossomo {cont}: {fitness(cromossomo)} ", file=arquivo)
+            cont+=1
+
+
     # Melhor solução encontrada
     melhor_individuo = max(populacao, key=fitness)
-    return melhor_individuo
+    return melhor_individuo, melhor_solução_historica
 
 # Exibir cromossomos
 def imprime_cromossomos(individuo):
-    print("Melhor solução encontrada:")
+    print("Melhor solução encontrada:", file=arquivo)
     for carga in cargas:
-        print(f'  {carga}:')
+        print(f'  {carga}:', file=arquivo)
         for compartimento in compartimentos:
             qtd = individuo[carga + '_' + compartimento]
-            print(f'    {compartimento}: {qtd:.2f} toneladas')
+            print(f'    {compartimento}: {qtd:.3f} toneladas', file=arquivo)
 
 # Executar o algoritmo genético
-melhor_solucao = algoritmo_genetico(tamanho_pop=50, geracoes=50, taxa_mutacao=0.1, taxa_crossover=0.8)
+melhor_solucao_atual, melhor_solucao_historica = algoritmo_genetico(tamanho_pop=5000, geracoes=500, taxa_mutacao=0.1, taxa_crossover=0.8)
+
 
 # Imprimir a melhor solução encontrada
-imprime_cromossomos(melhor_solucao)
+with open('Resultado.txt', 'w') as arquivo:
+    imprime_cromossomos(melhor_solucao_atual)
+    print(f"Melhor fitness atual: {fitness(melhor_solucao_atual)}", file=arquivo)
+    imprime_cromossomos(melhor_solucao_historica)
+    print(f"Melhor fitness historico: {fitness(melhor_solucao_historica)}", file=arquivo)
